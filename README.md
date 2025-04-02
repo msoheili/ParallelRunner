@@ -41,7 +41,7 @@ print(results)  # Outputs: {0: 11, 1: 23, 2: 35, 3: 47}
 import time
 from parallel_runner import ParallelRunner
 
-def process_data(ix, data_chunk):
+def process_data(data_chunk):
     time.sleep(1)  # Simulate a long computation
     return sum(data_chunk)
 
@@ -49,7 +49,6 @@ data = [[i for i in range(100)] for _ in range(10)]
 runner = ParallelRunner(
     procedure=process_data,
     concurrency=5,
-    ix_needed=True,
     array_args={"data_chunk": data},
 )
 
