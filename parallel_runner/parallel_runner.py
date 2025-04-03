@@ -71,6 +71,15 @@ class ParallelRunner:
             print(f"Error in ParallelRunner at index {ix}: {e}")
         finally:
             self.semaphore.release()
+            if self.use_tqdm:
+                self.progress.value += 1
+
+
+    def update_progressbar(self):
+        self.pbar.n = self.progress.value
+        self.pbar.last_print_n = self.progress.value
+        self.pbar.update(0)                 
+
 
     def run(self):
         """
@@ -81,24 +90,37 @@ class ParallelRunner:
         try:
             manager = Manager()
             self.results = manager.dict()
+            self.progress = manager.Value("i",0)
             self.semaphore = Semaphore(self.concurrency)
-            iterator = tqdm(range(self.no_times)) if self.use_tqdm else range(self.no_times)
 
             if self.debug:
                 # Run sequentially for debugging
+                iterator = tqdm(range(self.no_times)) if self.use_tqdm else range(self.no_times)
                 for i in iterator:
                     self._mittle_runner(i)
             else:
                 # Run in parallel
                 jobs = []
-                for i in iterator:
+                if self.use_tqdm:
+                    self.pbar = tqdm(total=self.no_times)
+
+                for i in range(self.no_times):
                     self.semaphore.acquire()
+                    if self.use_tqdm:
+                        self.update_progressbar()
                     p = Process(target=self._mittle_runner, args=(i,))
                     jobs.append(p)
                     p.start()
-                
+
+                if self.use_tqdm:
+                    while any(p.is_alive() for p in jobs):
+                        self.update_progressbar()
+               
                 for job in jobs:
                     job.join()
+
+                if self.use_tqdm:
+                    self.pbar.close()  
             
             return dict(self.results)
         except Exception as e:
