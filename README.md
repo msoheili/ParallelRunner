@@ -11,9 +11,8 @@
 - Supports indexed execution if needed.
 
 ## Installation
-No additional installation is required apart from `tqdm`. Install it via:
 ```sh
-pip install tqdm
+pip install parallel-runner
 ```
 
 ## Usage
